@@ -1,0 +1,49 @@
+spring:
+    cloud:
+        stream:
+            bindings:
+                auditProducer:
+                    destination: ${ACT_RB_AUDIT_PRODUCER_DEST:engineEvents}
+                    contentType: ${ACT_RB_AUDIT_PRODUCER_CONTENT_TYPE:application/json}
+                myCmdResults:
+                    destination: ${ACT_RB_COMMAND_RESULTS_DEST:commandResults}
+                    group: ${ACT_RB_COMMAND_RESULTS_GROUP:myCmdGroup}
+                    contentType: ${ACT_RB_COMMAND_RESULTS_CONTENT_TYPE:application/json}
+                myCmdProducer:
+                    destination: ${ACT_RB_COMMAND_RESULTS_DEST:commandConsumer}
+                    contentType: ${ACT_RB_COMMAND_RESULTS_CONTENT_TYPE:application/json}
+    jackson:
+        serialization:
+            fail-on-unwrapped-type-identifiers: ${ACT_RB_JACKSON_FAIL_ON_UNWRAPPED_IDS:false}
+    activiti:
+        process-definition-location-prefix: "file:${ACT_RB_PROCESSES_PATH:/processes/}"
+keycloak:
+    realm: ${ACT_KEYCLOAK_REALM:springboot}
+    resource: ${ACT_KEYCLOAK_RESOURCE:activiti}
+    public-client: ${ACT_KEYCLOAK_CLIENT:true}
+    security-constraints:
+        - authRoles: ${ACT_KEYCLOAK_ROLES:user}
+        - patterns: ${ACT_KEYCLOAK_PATTERNS:/*}
+    principal-attribute: ${ACT_KEYCLOAK_PRINCIPAL_ATTRIBUTE:preferred-username}
+    ssl-required: ${ACT_KEYCLOAK_SSL_REQUIRED:none} #change this for prod envs
+keycloakadminclientapp: ${ACT_KEYCLOAK_CLIENT_APP:admin-cli}
+keycloakclientuser: ${ACT_KEYCLOAK_CLIENT_USER:client}
+keycloakclientpassword: ${ACT_KEYCLOAK_CLIENT_PASSWORD:client} # this user needs to have the realm management roles assigned
+eureka:
+    client:
+        enabled: ${ACT_RB_EUREKA_CLIENT_ENABLED:true}
+    instance:
+        hostname: ${ACT_RB_HOST:<%= baseName.toLowerCase() %>-app}
+loader:
+    path: ${ACT_RB_LIBDIR:lib/}
+
+
+spring:
+    rabbitmq:
+        host: ${ACT_RABBITMQ_HOST:rabbitmq}
+keycloak:
+    auth-server-url: ${ACT_KEYCLOAK_URL:http://activiti-cloud-sso-idm:8180/auth}
+eureka:
+    client:
+        serviceUrl:
+            defaultZone: ${ACT_EUREKA_URL:http://activiti-cloud-registry:8761/eureka/}

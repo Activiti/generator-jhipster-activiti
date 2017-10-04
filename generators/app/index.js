@@ -41,13 +41,13 @@ module.exports = JhipsterGenerator.extend({
                 type: 'confirm',
                 name: 'activitiEmbeddedInstall',
                 message: 'Would you like to install embedded Activiti?',
-                default: true
+                default: false
             },
             {
                 type: 'confirm',
                 name: 'activitiRBInstall',
                 message: 'Would you like to configure this project as an Activiti Cloud Runtime Bundle?',
-                default: true
+                default: false
             }
         ];
 
@@ -99,6 +99,9 @@ module.exports = JhipsterGenerator.extend({
         this.buildTool = this.jhipsterAppConfig.buildTool;
         this.databaseType = this.jhipsterAppConfig.databaseType;
         this.applicationType = this.jhipsterAppConfig.applicationType;
+        this.prodDatabaseType = this.jhipsterAppConfig.prodDatabaseType;
+        this.hibernateCache = this.jhipsterAppConfig.hibernateCache;
+        this.serverPort = this.jhipsterAppConfig.serverPort;
 
         // use function in generator-base.js from generator-jhipster
         this.angularAppName = this.getAngularAppName();
@@ -137,6 +140,9 @@ module.exports = JhipsterGenerator.extend({
                 this.addGradleDependency('compile', 'org.activiti.cloud', 'activiti-cloud-starter-configure', '7-201709-EA');
                 this.log(`${chalk.bold.green('[jhipster-activiti]')} - Add dependency [activiti-cloud-starter-configure] (gradle)`);
             }
+
+            let mainReadmeActivitiText = '\n## Activiti\n\nDrop a process definition into the ${resourceDir}processes directory and the engine will run it - see https://spring.io/blog/2015/03/08/getting-started-with-activiti-and-spring-boot\n'
+            this.rewriteFile('README.md', '[JHipster Homepage and latest documentation]', mainReadmeRBText);
         }
 
         // create process dir whether embedded or RB
@@ -156,16 +162,10 @@ module.exports = JhipsterGenerator.extend({
                 this.addMavenDependency('org.activiti.cloud', 'activiti-cloud-starter-runtime-bundle', '7-201709-EA');
                 this.log(`${chalk.bold.green('[jhipster-activiti]')} - Add dependency [activiti-cloud-starter-runtime-bundle] (maven)`);
 
-                // add postgres dependency since you can't add the jar through the JHipster Dockerfile and overwriting Dockerfile prob won't work since they use WAR packaging
-                this.addMavenDependency('org.postgresql', 'postgresql', '9.4.1212.jre7');
-                this.log(`${chalk.bold.green('[jhipster-activiti]')} - Add dependency [postgresql] (maven)`);
-
             } else if (this.buildTool === 'gradle') {
                 this.addGradleDependency('compile', 'org.activiti.cloud', 'activiti-cloud-starter-runtime-bundle', '7-201709-EA');
                 this.log(`${chalk.bold.green('[jhipster-activiti]')} - Add dependency [activiti-cloud-starter-runtime-bundle] (gradle)`);
 
-                this.addGradleDependency('compile', 'org.postgresql', 'postgresql', '9.4.1212.jre7');
-                this.log(`${chalk.bold.green('[jhipster-activiti]')} - Add dependency [postgresql] (gradle)`);
             }
 
             if (!this.fs.exists(`${dockerDir}/activiti`)) {
@@ -173,7 +173,7 @@ module.exports = JhipsterGenerator.extend({
                 this.log(`${chalk.bold.green('[jhipster-activiti]')} - Create dir ${dockerDir}activiti`);
             }
             this.template('infrastructure-docker.yml', `${dockerDir}activiti/infrastructure-docker.yml`);
-            this.template('rb-docker-compose.yml', `${dockerDir}activiti/rb-docker-compose.yml`);
+            this.template('_rb-docker-compose.yml', `${dockerDir}activiti/rb-docker-compose.yml`);
             this.template('README.md', `${dockerDir}activiti/README.md`);
 
             // have to apply @ActivitiRuntimeBundle to JHipster-generated application source file before 'public class'
@@ -181,18 +181,83 @@ module.exports = JhipsterGenerator.extend({
             this.rewriteFile(`${javaDir}${this.baseName}App.java`, 'public class', '@ActivitiRuntimeBundle');
             this.rewriteFile(`${javaDir}${this.baseName}App.java`, 'import ', 'import org.activiti.cloud.starter.configuration.ActivitiRuntimeBundle;');
 
-            // TODO: configure properties file (https://github.com/clun/generator-jhipster-ff4j/blob/master/generators/app/index.js#L457)
-            // have to use localhost for application-dev.yml and docker hostnames for application-prod.yml and common stuff in application.yml
-            // for all app-specific properties the needle is 'application:'
-            //
+            let activitiConfig = '\n# ===================================================================\n';
+            activitiConfig += '# Activiti-specific properties\n';
+            activitiConfig += '# ===================================================================\n';
+            activitiConfig += 'spring:\n';
+            activitiConfig += '    cloud:\n';
+            activitiConfig += '        stream:\n';
+            activitiConfig += '            bindings:\n';
+            activitiConfig += '                auditProducer:\n';
+            activitiConfig += '                    destination: ${ACT_RB_AUDIT_PRODUCER_DEST:engineEvents}\n';
+            activitiConfig += '                    contentType: ${ACT_RB_AUDIT_PRODUCER_CONTENT_TYPE:application/json}\n';
+            activitiConfig += '                myCmdResults:\n';
+            activitiConfig += '                    destination: ${ACT_RB_COMMAND_RESULTS_DEST:commandResults}\n';
+            activitiConfig += '                    group: ${ACT_RB_COMMAND_RESULTS_GROUP:myCmdGroup}\n';
+            activitiConfig += '                    contentType: ${ACT_RB_COMMAND_RESULTS_CONTENT_TYPE:application/json}\n';
+            activitiConfig += '                myCmdProducer:\n';
+            activitiConfig += '                    destination: ${ACT_RB_COMMAND_RESULTS_DEST:commandConsumer}\n';
+            activitiConfig += '                    contentType: ${ACT_RB_COMMAND_RESULTS_CONTENT_TYPE:application/json}\n';
+            activitiConfig += '    jackson:\n';
+            activitiConfig += '        serialization:\n';
+            activitiConfig += '            fail-on-unwrapped-type-identifiers: ${ACT_RB_JACKSON_FAIL_ON_UNWRAPPED_IDS:false}\n';
+            activitiConfig += '    activiti:';
+            activitiConfig += '        process-definition-location-prefix: "file:${ACT_RB_PROCESSES_PATH:/processes/}"\n';
+            activitiConfig += 'keycloak:\n';
+            activitiConfig += '    realm: ${ACT_KEYCLOAK_REALM:springboot}\n';
+            activitiConfig += '    resource: ${ACT_KEYCLOAK_RESOURCE:activiti}\n';
+            activitiConfig += '    public-client: ${ACT_KEYCLOAK_CLIENT:true}\n';
+            activitiConfig += '    security-constraints:\n';
+            activitiConfig += '        - authRoles: ${ACT_KEYCLOAK_ROLES:user}\n';
+            activitiConfig += '        - patterns: ${ACT_KEYCLOAK_PATTERNS:/*}\n';
+            activitiConfig += '    principal-attribute: ${ACT_KEYCLOAK_PRINCIPAL_ATTRIBUTE:preferred-username}\n';
+            activitiConfig += '    ssl-required: ${ACT_KEYCLOAK_SSL_REQUIRED:none} #change this for prod envs\n';
+            activitiConfig += 'keycloakadminclientapp: ${ACT_KEYCLOAK_CLIENT_APP:admin-cli}\n';
+            activitiConfig += 'keycloakclientuser: ${ACT_KEYCLOAK_CLIENT_USER:client}\n';
+            activitiConfig += 'keycloakclientpassword: ${ACT_KEYCLOAK_CLIENT_PASSWORD:client} # this user needs to have the realm management roles assigned\n';
+            activitiConfig += 'eureka:\n';
+            activitiConfig += '    client:\n';
+            activitiConfig += '        enabled: ${ACT_RB_EUREKA_CLIENT_ENABLED:true}\n';
+            activitiConfig += '    instance:\n';
+            activitiConfig += `        hostname: \${ACT_RB_HOST:${this.baseName}-app}\n`;
+            activitiConfig += 'loader:\n';
+            activitiConfig += '    path: ${ACT_RB_LIBDIR:lib/}\n';
+            activitiConfig += '\n';
+
+            this.rewriteFile(`${resourceDir}config/application.yml`, 'application:', activitiConfig);
 
             let activitiConfigDev = '\n# ===================================================================\n';
-            activitiConfigDev+='# Activiti-specific properties\n';
-            activitiConfigDev+='# ===================================================================\n';
+            activitiConfigDev += '# Activiti-specific properties for running app local against activiti docker infrastructure\n';
+            activitiConfigDev += '# ===================================================================\n';
+            activitiConfigDev += 'spring:\n';
+            activitiConfigDev += '    rabbitmq:\n';
+            activitiConfigDev += '        host: ${ACT_RABBITMQ_HOST:rabbitmq}\n';
+            activitiConfigDev += 'keycloak:\n';
+            activitiConfigDev += '    auth-server-url: ${ACT_KEYCLOAK_URL:http://localhost:8180/auth}\n';
+            activitiConfigDev += 'eureka:\n';
+            activitiConfigDev += '    client:\n';
+            activitiConfigDev += '        serviceUrl:\n';
+            activitiConfigDev += '            defaultZone: ${ACT_EUREKA_URL:http://localhost:8761/eureka/}\n';
+            this.rewriteFile(`${resourceDir}config/application-dev.yml`, 'application:', activitiConfigDev);
 
-            this.rewriteFile('${resourceDir}config/application-dev.yml', 'application:', activitiConfigDev);
+            let activitiConfigProd = '\n# ===================================================================\n';
+            activitiConfigProd += '# Activiti-specific properties for running app within docker\n';
+            activitiConfigProd += '# ===================================================================\n';
+            activitiConfigProd += 'spring:\n';
+            activitiConfigProd += '    rabbitmq:\n';
+            activitiConfigProd += '        host: ${ACT_RABBITMQ_HOST:rabbitmq}\n';
+            activitiConfigProd += 'keycloak:\n';
+            activitiConfigProd += '    auth-server-url: ${ACT_KEYCLOAK_URL:http://activiti-cloud-sso-idm:8180/auth}\n';
+            activitiConfigProd += 'eureka:\n';
+            activitiConfigProd += '    client:\n';
+            activitiConfigProd += '        serviceUrl:\n';
+            activitiConfigProd += '            defaultZone: ${ACT_EUREKA_URL:http://activiti-cloud-registry:8761/eureka/}\n';
+            this.rewriteFile('${resourceDir}config/application-prod.yml', 'application:', activitiConfigProd);
 
-            // hope that it works without boot 2 or tell user to change
+            let mainReadmeRBText = `\n## Activiti\n\nSee ${dockerDir}activiti for running Activiti Runtime Bundle\n`;
+            this.rewriteFile('README.md', '[JHipster Homepage and latest documentation]', mainReadmeRBText);
+
+            // hope that it works without boot 2 or do regex to change
 
             // hope that it works without changing layout to zip in boot maven plugin (probably will for this purpose) or talk to jhipster about changing its config (or maybe this.addMavenPlugin will overwrite?)
 

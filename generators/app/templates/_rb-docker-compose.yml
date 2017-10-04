@@ -1,0 +1,71 @@
+version: '2'
+services:
+  # We define the name and the base image of our Runtime Bundle
+  <%= baseName.toLowerCase() %>-app:
+      image: <%= baseName.toLowerCase() %>
+      external_links:
+        - activiti-cloud-sso-idm
+        - activiti-cloud-registry
+        - rabbitmq
+      depends_on:
+        - rb-postgres
+      # You can launch as many Runtime Bundles as you want by changing these Env variables
+      environment:
+        - ACT_RB_HOST=<%= baseName.toLowerCase() %>-app
+        - ACT_RB_APP_NAME=<%= baseName.toLowerCase() %>-app
+        - SPRING_PROFILES_ACTIVE=prod,swagger
+        <%_ if (prodDatabaseType === 'mysql') { _%>
+        - SPRING_DATASOURCE_URL=jdbc:mysql://<%= baseName.toLowerCase() %>-mysql:3306/<%= baseName.toLowerCase() %>?useUnicode=true&characterEncoding=utf8&useSSL=false
+        <%_ } _%>
+        <%_ if (prodDatabaseType === 'mariadb') { _%>
+        - SPRING_DATASOURCE_URL=jdbc:mariadb://<%= baseName.toLowerCase() %>-mariadb:3306/<%= baseName.toLowerCase() %>
+        <%_ } _%>
+        <%_ if (prodDatabaseType === 'postgresql') { _%>
+        - SPRING_DATASOURCE_URL=jdbc:postgresql://<%= baseName.toLowerCase() %>-postgresql:5432/<%= baseName %>
+        <%_ } _%>
+        <%_ if (prodDatabaseType === 'mssql') { _%>
+        - SPRING_DATASOURCE_URL=jdbc:sqlserver://<%= baseName.toLowerCase() %>-mssql:1433;database=jhitest
+        <%_ } _%>
+        <%_ if (prodDatabaseType === 'oracle') { _%>
+        - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@<%= baseName.toLowerCase() %>-oracle:1521:<%= baseName %>
+        <%_ } _%>
+        <%_ if (hibernateCache === 'infinispan') { _%>
+        - JAVA_OPTS=-Djgroups.tcp.address=NON_LOOPBACK -Djava.net.preferIPv4Stack=true
+        <%_ } _%>
+      ports:
+        - <%= serverPort %>:<%= serverPort %>
+      networks:
+        - infrastructure
+  # DB used by app
+    <%_ if (prodDatabaseType === 'mysql') { _%>
+    <%= baseName.toLowerCase() %>-mysql:
+        extends:
+            file: mysql.yml
+            service: <%= baseName.toLowerCase() %>-mysql
+    <%_ } _%>
+    <%_ if (prodDatabaseType === 'mariadb') { _%>
+    <%= baseName.toLowerCase() %>-mariadb:
+        extends:
+            file: mariadb.yml
+            service: <%= baseName.toLowerCase() %>-mariadb
+    <%_ } _%>
+    <%_ if (prodDatabaseType === 'postgresql') { _%>
+    <%= baseName.toLowerCase() %>-postgresql:
+        extends:
+            file: postgresql.yml
+            service: <%= baseName.toLowerCase() %>-postgresql
+    <%_ } _%>
+    <%_ if (prodDatabaseType === 'mssql') { _%>
+    <%= baseName.toLowerCase() %>-mssql:
+        extends:
+            file: mssql.yml
+            service: <%= baseName.toLowerCase() %>-mssql
+    <%_ } _%>
+      networks:
+        - infrastructure
+# we will join the infrastructure network defined by the infrastructure docker compose.
+networks:
+  infrastructure:
+    external:
+      name: docker_default
+
