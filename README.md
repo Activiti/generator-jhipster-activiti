@@ -46,7 +46,7 @@ npm update -g generator-jhipster-activiti
 
 # License
 
-Apache-2.0 © [Ryan Dawson](https://www.activiti.org)
+Apache-2.0 © [Alfresco](https://www.activiti.org)
 
 
 [npm-image]: https://img.shields.io/npm/v/generator-jhipster-activiti.svg
