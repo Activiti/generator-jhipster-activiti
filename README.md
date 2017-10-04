@@ -44,6 +44,8 @@ npm update -g generator-jhipster-activiti
 
 # Usage
 
+This module can be used to configure a JHipster application so that it is enabled to execute BPM processes using the Activiti BPM engine.
+
 # License
 
 Apache-2.0 © [Alfresco](https://www.activiti.org)

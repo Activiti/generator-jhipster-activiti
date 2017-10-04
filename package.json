@@ -1,6 +1,6 @@
 {
   "name": "generator-jhipster-activiti",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Use Activiti to enable Spring Boot applications with BPM",
   "keywords": [
     "yeoman-generator",
