@@ -1,0 +1,10 @@
+{
+  "generator-jhipster-module": {
+    "promptValues": {
+      "githubName": "ryandawsonuk",
+      "authorName": "Ryan Dawson",
+      "authorEmail": "ryan.dawson@alfresco.com",
+      "authorUrl": "https://www.activiti.org"
+    }
+  }
+}

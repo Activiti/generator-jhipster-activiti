@@ -1,0 +1,22 @@
+node_modules
+coverage
+.idea
+*.iml
+*.ipr
+*.iws
+atlassian-ide-plugin.xml
+/.project
+test/temp/
+*debug.log*
+.vscode
+
+
+#IDE metadata
+**.idea/**
+.idea/
+*.iml
+
+# Eclipse
+.project
+.classpath
+.settings
