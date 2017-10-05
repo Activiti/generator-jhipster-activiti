@@ -72,10 +72,15 @@ module.exports = JhipsterGenerator.extend({
         }
 
         if (this.jhipsterAppConfig.databaseType !== 'sql') {
-            this.log(`\n${chalk.bold.red('[jhipster-activiti]')} - Aborted - Activiti embedded requires SQL database`);
+            this.log(`\n${chalk.bold.red('[jhipster-activiti]')} - Aborted - Activiti requires SQL database (if you need distributed persistence consider adding hazelcast or using e.g. cockroachdb)`);
             return;
         }
 
+        // TODO: refine checks
+        // serviceDiscoveryType leads to another variable (possibly) - if consul then say not currently supported through JHipster generator, see https://github.com/Activiti/ for example implementations that you can start from or contact the Activiti team through gitter
+        // if kafka say not supported
+        // if project type is gateway or registry then say not supported
+        // if auth type is ...
         if (this.activitiRBInstall && this.jhipsterAppConfig.applicationType !== 'monolith') {
             this.log(`\n${chalk.bold.red('[jhipster-activiti]')} - Aborted - Activiti RB will configure app as microservice - app type must first be monolith in order to configure`);
             return;
@@ -256,6 +261,11 @@ module.exports = JhipsterGenerator.extend({
 
             let mainReadmeRBText = `\n## Activiti\n\nSee ${dockerDir}activiti for running Activiti Runtime Bundle\n`;
             this.rewriteFile('README.md', '[JHipster Homepage and latest documentation]', mainReadmeRBText);
+
+            //TODO: currently referring to new README which says 'rb-docker-compose.yml in preferance to the jhipster-generated app.yml'
+            // but it would perhaps be better to do a regex replace in the main README on 'src/main/docker/app.yml'
+            // and then say in main README that it has been replaced
+            // but first prefix that whole line 'docker-compose -f src/main/docker/app.yml up -d' with a command to start the infrastructure
 
             // hope that it works without boot 2 or do regex to change
 
