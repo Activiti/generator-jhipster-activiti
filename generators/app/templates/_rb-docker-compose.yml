@@ -1,3 +1,5 @@
+# This file is here just to show that we could parameterise docker compose like this to handle different dbs and provide for local working
+# If we were to use it then we'd also want to copy over the infrastructure yml file
 version: '2'
 services:
   # We define the name and the base image of our Runtime Bundle
@@ -7,8 +9,6 @@ services:
         - activiti-cloud-sso-idm
         - activiti-cloud-registry
         - rabbitmq
-      depends_on:
-        - rb-postgres
       # You can launch as many Runtime Bundles as you want by changing these Env variables
       environment:
         - ACT_RB_HOST=<%= baseName.toLowerCase() %>-app
