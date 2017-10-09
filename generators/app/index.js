@@ -164,7 +164,11 @@ module.exports = JhipsterGenerator.extend({
             this.log(`${chalk.bold.green('[jhipster-activiti]')} - Create dir ${testResourceDir}processes`);
         }
 
-/*  Can't make below available until JHipster moves to boot 2.0.0
+/*  TODO: Won't make below available until either JHipster moves to boot 2.0.0 or we provide 'lite' versions of our starters without rabbit, idm or eureka
+    Then we can check for those deps being provided by JHipster and use JHipster versions if available or add/error if not
+    This will avoid the need to try to block transitive deps to get working on boot 1
+    With IDM excluded would be good to provide an empty UserGroupLookupProxy and update RB with option to set groups in request param
+
         if (this.activitiRBInstall) {
 
             // excluding keycloak as JHipster not yet on boot 2.0 and adapter we're using requires it
